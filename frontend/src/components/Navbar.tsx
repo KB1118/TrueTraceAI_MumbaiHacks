@@ -3,12 +3,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { authAPI } from '@/lib/api';
 import Cookies from 'js-cookie';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function Navbar() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -33,6 +35,13 @@ export default function Navbar() {
         </Link>
         
         <div className="navbar-links">
+          <button
+            className="theme-toggle"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+          </button>
           {mounted && isAuthenticated ? (
             <>
               <Link href="/dashboard" className="navbar-link">
