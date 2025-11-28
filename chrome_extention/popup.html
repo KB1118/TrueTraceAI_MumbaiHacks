@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Miss Info Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 350px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+        }
+
+        .container {
+            padding: 24px;
+            text-align: center;
+        }
+
+        .icon-large {
+            width: 72px;
+            height: 72px;
+            margin-bottom: 16px;
+            filter: drop-shadow(0 4px 12px rgba(74, 158, 255, 0.4));
+        }
+
+        h1 {
+            font-size: 20px;
+            margin: 0 0 8px 0;
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .status {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px rgba(81, 207, 102, 0.2);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(81, 207, 102, 0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(81, 207, 102, 0.1); }
+        }
+
+        .status-text {
+            font-weight: 500;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            background: rgba(74, 158, 255, 0.15);
+            border: 1px solid rgba(74, 158, 255, 0.3);
+            color: #4a9eff;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: rgba(74, 158, 255, 0.25);
+            border-color: rgba(74, 158, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .log-count {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .log-count strong {
+            color: #4a9eff;
+            font-size: 18px;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 12px;
+        }
+
+        .powered-by {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Icon -->
+        <svg class="icon-large" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="11" fill="#2d5a7b" opacity="0.9"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#4a9eff"/>
+        </svg>
+
+        <h1>Miss Info Checker</h1>
+        <p class="subtitle">Automatically analyzes paragraphs for<br>misinformation and bias</p>
+
+        <div class="status">
+            <div class="dot"></div>
+            <div class="status-text">Extension is Active</div>
+        </div>
+
+        <div class="log-count">
+            <div style="margin-bottom: 4px;">Analysis History</div>
+            <strong id="log-count">0</strong> checks performed
+        </div>
+
+        <div class="actions">
+            <button class="btn" id="download-log"> Download Log</button>
+            <button class="btn" id="clear-log">Clear Log</button>
+        </div>
+
+        <footer>
+            <div class="powered-by">
+                
+                <span>Made by PBG</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
