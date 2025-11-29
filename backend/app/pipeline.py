@@ -15,6 +15,7 @@ from app.llm import (
     generate_result_card,
     perform_topic_modeling
 )
+from app.twitter_generator import generate_twitter_stream, generate_keyword_focused_posts
 from app.config import settings
 
 
@@ -29,22 +30,29 @@ if not logger.handlers:
 async def collect_social_posts(keywords: List[str]) -> List[Dict[str, Any]]:
     """
     Collect posts from social media platforms using keywords.
+    Uses LLM-generated fake Twitter stream for testing.
     In production, this would integrate with Twitter/X API, Reddit API, etc.
-    For now, returns mock data.
     """
-    # Mock implementation - replace with actual API calls
-    logger.info("Collecting social posts with %s keywords", len(keywords))
-    mock_posts = []
-    for keyword in keywords[:5]:  # Limit keywords
-        for i in range(10):  # Mock 10 posts per keyword
-            mock_posts.append({
-                "id": f"{keyword}_{i}",
-                "text": f"Sample post about {keyword} - this is a mock post for demonstration.",
-                "platform": "twitter" if i % 2 == 0 else "reddit",
-                "timestamp": "2024-01-01T00:00:00Z"
-            })
-    logger.info("Collected %s mock posts", len(mock_posts))
-    return mock_posts
+    logger.info("Collecting social posts with %s keywords using LLM-generated fake stream", len(keywords))
+    
+    # Generate a mix of casual and crisis posts
+    # Use keyword-focused generation for better relevance
+    posts = await generate_keyword_focused_posts(
+        keywords=keywords,
+        posts_per_keyword=15  # Generate 15 posts per keyword
+    )
+    
+    # Also add some general stream posts for variety
+    stream_posts = await generate_twitter_stream(
+        keywords=keywords,
+        num_posts=30,  # Additional general posts
+        category_weights={"casual": 0.4, "crisis": 0.6}  # Slightly more crisis-focused
+    )
+    
+    # Combine and return
+    all_posts = posts + stream_posts
+    logger.info("Collected %s LLM-generated posts (mix of casual and crisis topics)", len(all_posts))
+    return all_posts
 
 
 async def semantic_deduplication(posts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
