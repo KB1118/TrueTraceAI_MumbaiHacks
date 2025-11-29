@@ -2,7 +2,7 @@
 
 TrueTrace AI is an agentic misinformation detection and verification ecosystem. The system automatically monitors global open-source information streams, detects emerging misinformation, and provides transparent, evidence-based fact-checking powered by Google Gemini 2.5 Flash and advanced AI reasoning.
 
-## 🎯 Overview
+##  Overview
 
 TrueTrace AI combines real-time social media monitoring, intelligent clustering, and evidence-based verification to combat misinformation. The platform features:
 
@@ -13,7 +13,7 @@ TrueTrace AI combines real-time social media monitoring, intelligent clustering,
 - **Multimodal Fact-Checking**: Analyze images, videos, and audio with contextual verification
 - **Interactive Dashboard**: Real-time visualization of crises, claims, and verification results
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 full_app/
@@ -50,7 +50,7 @@ full_app/
 └── README.md
 ```
 
-## 🌿 Branch Information
+##  Branch Information
 
 This repository contains multiple components across different branches:
 
@@ -64,7 +64,7 @@ This repository contains multiple components across different branches:
   - Integrates with the TrueTrace AI backend API
   - Provides instant fact-checking results while browsing
 
-## 🧩 Core Components
+##  Core Components
 
 ### Backend Components
 
@@ -169,7 +169,7 @@ Standalone multimodal fact-checking interface:
 - **`RumorClusters`**: Visual representation of post clusters
 - **`Navbar`**: Top navigation with theme switching
 
-## 🚀 Features
+##  Features
 
 ### Real-Time Monitoring
 - Continuously scans Reddit and Telegram for crisis-related content
@@ -199,7 +199,7 @@ Standalone multimodal fact-checking interface:
 - Volatility metrics for claim stability
 - Audience-specific result cards (general, journalist, researcher)
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 ### Backend
 - **FastAPI**: Modern Python web framework
@@ -222,7 +222,7 @@ Standalone multimodal fact-checking interface:
 - **Telegram**: Public channel web preview scraping
 - **Google Search**: Grounded search for evidence retrieval
 
-## 📦 Setup Instructions
+##  Setup Instructions
 
 ### Prerequisites
 - Python 3.8+
@@ -303,7 +303,7 @@ npm run dev
 
 The frontend will be available at `http://localhost:3000`
 
-## 📖 Usage
+##  Usage
 
 ### Dashboard Workflow
 
@@ -339,7 +339,7 @@ curl -X POST http://localhost:8000/api/v1/verify \
   -d '{"text": "Your claim here"}'
 ```
 
-## 🔌 API Endpoints
+##  API Endpoints
 
 ### Authentication
 - `POST /api/v1/auth/register` - Register new user
@@ -368,7 +368,7 @@ curl -X POST http://localhost:8000/api/v1/verify \
 - `POST /api/v1/pipeline/trigger` - Trigger the radar pipeline (requires auth)
 - `GET /api/v1/pipeline/status` - Get pipeline execution status
 
-## ⚙️ Environment Variables
+##  Environment Variables
 
 ### Backend (.env)
 
@@ -392,7 +392,7 @@ curl -X POST http://localhost:8000/api/v1/verify \
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | Backend API URL | `http://localhost:8000` |
 
-## 🔧 Development
+##  Development
 
 ### Backend Development
 - Database tables are created automatically on first run
@@ -413,7 +413,7 @@ curl -X POST http://localhost:8000/api/v1/verify \
 4. Monitor logs for detailed execution steps
 5. Check database for persisted results
 
-## 📊 Data Flow
+##  Data Flow
 
 ```
 1. Pipeline Trigger
@@ -439,7 +439,7 @@ curl -X POST http://localhost:8000/api/v1/verify \
 11. Result Cards → Generate audience-specific cards
 ```
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Pipeline Issues
 - **No keywords extracted**: Check Gemini API key and quota
@@ -452,13 +452,12 @@ curl -X POST http://localhost:8000/api/v1/verify \
 - **Authentication fails**: Check JWT secret key configuration
 - **Multimodal upload fails**: Verify file size limits and Gemini API quota
 
-## 📝 License
+## License
 
-This project is part of a hackathon submission.
+All rights are owned by Power Buff Gurls.
+This project is not open-source and may not be redistributed, modified, or used commercially without explicit permission.
 
-## 🤝 Contributing
 
-This is a hackathon project. For questions or issues, please refer to the project repository.
 
 ---
 
