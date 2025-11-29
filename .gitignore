@@ -1,0 +1,38 @@
+# Global
+*.log
+*.tmp
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Python / FastAPI backend
+backend/__pycache__/
+backend/**/*.pyc
+backend/.venv/
+backend/venv/
+backend/.mypy_cache/
+backend/.coverage
+backend/htmlcov/
+backend/.pytest_cache/
+backend/truetrace.db
+backend/truetrace.db-journal
+backend/chroma_db/
+backend/.env
+backend/backend_venv
+# Node / Next.js frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.turbo/
+frontend/.vercel/
+frontend/out/
+frontend/dist/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# OS / IDE
+.idea/
+.vscode/
+*.code-workspace
+
