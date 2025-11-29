@@ -151,6 +151,16 @@ class GeminiVerifier:
         self.GenerateContentConfig = GenerateContentConfig
 
     def check_claim(self, claim_text):
+        """
+        Run grounded fact-checking with Gemini and return a structured result.
+
+        Returns a dict with:
+            - label: 'supports' | 'contradicts' | 'unrelated'
+            - reasoning: short natural language explanation (for supports/contradicts especially)
+            - source_urls: list of cited source URLs (required for supports/contradicts when available)
+        """
+        import json
+
         prompt = f"""
 You are a fact verification expert using grounded web search.
 
@@ -158,12 +168,18 @@ TASK:
 1. Perform Google Search.
 2. Read the top articles.
 3. Decide whether the claim is SUPPORTED, CONTRADICTED, or UNRELATED by currently available evidence.
+4. If you label the claim as SUPPORTED or CONTRADICTED, provide:
+   - A SHORT reasoning sentence or two that points to the key evidence.
+   - At least one or two source URLs from reputable sites (priority: major news outlets, official orgs, academic sources).
+5. If you label the claim as UNRELATED, give a brief explanation and you MAY omit sources.
 
-OUTPUT:
-Return EXACTLY ONE WORD:
-- supports
-- contradicts
-- unrelated
+OUTPUT FORMAT (STRICT JSON):
+Return ONLY a valid JSON object, no extra text, of the form:
+{{
+  "label": "supports" | "contradicts" | "unrelated",
+  "reasoning": "short explanation of why you chose this label",
+  "source_urls": ["https://source1", "https://source2"]
+}}
 
 CLAIM:
 {claim_text}
@@ -173,10 +189,43 @@ CLAIM:
             contents=prompt,
             config=self.GenerateContentConfig(
                 tools=[self.GoogleSearch],
-                temperature=0.0
+                temperature=0.1
             )
         )
-        return response.text.strip().lower()
+        print("response from gemini:", response.text)
+
+        raw_text = (response.text or "").strip()
+        print("raw_text from gemini:", raw_text)
+        try:
+            data = json.loads(raw_text)
+        except Exception:
+            # Very defensive: fall back to simple label only
+            label = raw_text.lower().strip()
+            if label not in {"supports", "contradicts", "unrelated"}:
+                label = "unrelated"
+            data = {
+                "label": label,
+                "reasoning": "",
+                "source_urls": []
+            }
+
+        label = str(data.get("label", "")).lower().strip()
+        if label not in {"supports", "contradicts", "unrelated"}:
+            label = "unrelated"
+
+        reasoning = str(data.get("reasoning", "")).strip()
+        source_urls = data.get("source_urls") or []
+        if not isinstance(source_urls, list):
+            source_urls = [str(source_urls)]
+
+        # Keep URLs simple strings
+        source_urls = [str(u).strip() for u in source_urls if str(u).strip()]
+
+        return {
+            "label": label,
+            "reasoning": reasoning,
+            "source_urls": source_urls,
+        }
 
 
 class CrisisMonitor:
@@ -281,7 +330,7 @@ class CrisisMonitor:
             gemini_api_key: Gemini API key
             
         Returns:
-            Dict mapping keyword to list of dicts with claim and verdict
+            Dict mapping keyword to list of dicts with claim, verdict, reasoning, and source_urls
         """
         verifier = GeminiVerifier(api_key=gemini_api_key)
         results_by_keyword = {}
@@ -290,12 +339,24 @@ class CrisisMonitor:
             print(f"\n=== Processing: {keyword} ===\n")
             keyword_results = []
             for claim in claims[:5]:  # limit to first 5 for speed
-                verdict = verifier.check_claim(claim)
+                result = verifier.check_claim(claim)
+                label = result.get("label", "unrelated")
+                reasoning = result.get("reasoning", "")
+                source_urls = result.get("source_urls", [])
+
                 print(f"Claim: {claim}")
-                print(f"Verdict: {verdict}\n")
+                print(f"Verdict: {label}")
+                if reasoning:
+                    print(f"Reasoning: {reasoning}")
+                if source_urls:
+                    print(f"Sources: {source_urls}")
+                print()
+
                 keyword_results.append({
                     "claim": claim,
-                    "verdict": verdict
+                    "verdict": label,
+                    "reasoning": reasoning,
+                    "source_urls": source_urls,
                 })
             results_by_keyword[keyword] = keyword_results
         return results_by_keyword

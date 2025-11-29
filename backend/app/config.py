@@ -47,13 +47,13 @@ class Settings(BaseSettings):
         return self.get_database_url()
     
     # Gemini + data extraction
-    GEMINI_API_KEY: str = "AIzaSyAPE5O3WkomEQgS9IQnrnljtTmRUaCgCD0"
-    GEMINI_MODEL: str = "gemini-2.0-flash-exp"
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     SENTENCE_TRANSFORMER_MODEL: str = "all-MiniLM-L6-v2"
     MAX_PIPELINE_CLUSTERS: int = 10
     CRISIS_KEYWORD_QUERY: str = "What major crises are happening right now worldwide?"
-    SCRAPE_KEYWORD_LIMIT: int = 5
-    REDDIT_SUBREDDIT_LIMIT: int = 12
+    SCRAPE_KEYWORD_LIMIT: int = 2
+    REDDIT_SUBREDDIT_LIMIT: int = 6
     REDDIT_POST_LIMIT: int = 5
     TELEGRAM_CHANNEL_LIMIT: int = 20
     TELEGRAM_POST_LIMIT: int = 50

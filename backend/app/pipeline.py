@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.models import Crisis, RumorCluster, Claim, ResultCard
 from app.llm import generate_result_card
 from app.config import settings
-from app.services.data_extraction_service import CrisisMonitor, ClaimBot
+from app.services.data_extraction_service import CrisisMonitor, ClaimBot, GeminiVerifier
 
 
 logger = logging.getLogger("truetrace.pipeline")
@@ -28,19 +28,19 @@ logger.setLevel(logging.DEBUG)
 VERDICT_MAPPING = {
     "supports": "True",
     "contradicts": "False",
-    "unrelated": "Uncertain"
+    "unrelated": "Uncertain",
 }
 
 CONFIDENCE_MAPPING = {
-    "supports": 0.85,
-    "contradicts": 0.8,
-    "unrelated": 0.45
+    "supports": 0.9,
+    "contradicts": 0.85,
+    "unrelated": 0.5,
 }
 
 VOLATILITY_MAPPING = {
-    "supports": 0.35,
-    "contradicts": 0.5,
-    "unrelated": 0.6
+    "supports": 0.3,
+    "contradicts": 0.45,
+    "unrelated": 0.6,
 }
 
 
@@ -60,11 +60,57 @@ def _parse_numbered_claims(raw_block: str) -> List[str]:
     return claims
 
 
-def _build_reasoning(keyword: str, verdict_raw: str) -> str:
-    """Create a short reasoning string for storage and cards."""
+def _build_reasoning(keyword: str, claim_text: str, verdict_raw: str) -> str:
+    """
+    Fallback reasoning used ONLY when Gemini verification does not return one.
+
+    This function performs a lightweight, on-demand fact-check of the claim
+    using `GeminiVerifier` and prefers the model's natural-language explanation.
+    If anything fails (no API key, network error, bad response), we log and
+    return an empty string so the UI can handle the absence gracefully.
+    """
     if not verdict_raw:
-        return f"Gemini web search could not confidently classify the claim about {keyword}."
-    return f"Gemini web search judged this {keyword} claim as '{verdict_raw}'."
+        return ""
+
+    if not settings.GEMINI_API_KEY:
+        logger.warning(
+            "Cannot build fallback reasoning for claim (no GEMINI_API_KEY). "
+            "keyword=%s claim=%s verdict_raw=%s",
+            keyword,
+            claim_text,
+            verdict_raw,
+        )
+        return ""
+
+    try:
+        verifier = GeminiVerifier(api_key=settings.GEMINI_API_KEY)
+        result = verifier.check_claim(claim_text)
+        reasoning = (result or {}).get("reasoning", "") or ""
+        reasoning = reasoning.strip()
+        if reasoning:
+            logger.debug(
+                "Fallback reasoning obtained from GeminiVerifier for keyword=%s, verdict_raw=%s",
+                keyword,
+                verdict_raw,
+            )
+            return reasoning
+
+        # If the verifier returned no reasoning but did return a label, we keep our
+        # existing verdict mapping and emit a very short generic explanation.
+        label = (result or {}).get("label", "").lower().strip()
+        mapped_verdict = VERDICT_MAPPING.get(label or verdict_raw, "Uncertain")
+        return (
+            f"This claim about {keyword} is currently assessed as "
+            f"{mapped_verdict.lower()} based on available public reporting."
+        )
+    except Exception as exc:
+        logger.exception(
+            "Fallback Gemini-based reasoning failed for keyword=%s, verdict_raw=%s: %s",
+            keyword,
+            verdict_raw,
+            exc,
+        )
+        return ""
 
 
 async def _run_sync(func, *args, **kwargs):
@@ -275,7 +321,12 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
             settings.GEMINI_API_KEY
         )
         
+        print("================================================")
+        print(verification_results)
+        print("================================================")
         verdict_lookup: Dict[Tuple[str, str], str] = {}
+        reasoning_lookup: Dict[Tuple[str, str], str] = {}
+        sources_lookup: Dict[Tuple[str, str], List[str]] = {}
         for keyword, verdict_entries in verification_results.items():
             logger.debug("Step 8 - Raw verification results for keyword '%s': %s", keyword, verdict_entries)
             for entry in verdict_entries:
@@ -283,12 +334,21 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
                 if not normalized:
                     continue
                 verdict_value = entry.get("verdict", "unrelated")
-                verdict_lookup[(keyword, normalized)] = verdict_value
+                key = (keyword, normalized)
+                verdict_lookup[key] = verdict_value
+                reasoning_lookup[key] = entry.get("reasoning") or ""
+                sources = entry.get("source_urls") or []
+                if not isinstance(sources, list):
+                    sources = [sources]
+                sources_lookup[key] = [str(u).strip() for u in sources if str(u).strip()]
                 logger.debug(
-                    "Step 8 - Mapping verification result: keyword='%s', claim='%s', verdict_raw='%s'",
+                    "Step 8 - Mapping verification result: keyword='%s', claim='%s', verdict_raw='%s', "
+                    "reasoning_present=%s, sources_count=%s",
                     keyword,
                     normalized,
                     verdict_value,
+                    bool(reasoning_lookup[key]),
+                    len(sources_lookup[key]),
                 )
         
         # ------------------------------------------------------------------
@@ -300,11 +360,21 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
             normalized = claim_text.strip()
             if not normalized:
                 continue
-            verdict_raw = verdict_lookup.get((keyword, normalized.lower()), "unrelated")
+            key = (keyword, normalized.lower())
+            verdict_raw = verdict_lookup.get(key, "unrelated")
             verdict = VERDICT_MAPPING.get(verdict_raw, "Uncertain")
             confidence = CONFIDENCE_MAPPING.get(verdict_raw, 0.5)
             volatility = VOLATILITY_MAPPING.get(verdict_raw, 0.6)
-            reasoning = _build_reasoning(keyword, verdict_raw)
+            # Prefer Gemini's own reasoning when available; otherwise fall back to generic text
+            reasoning_from_model = reasoning_lookup.get(key, "").strip()
+            reasoning = reasoning_from_model or _build_reasoning(keyword, normalized, verdict_raw)
+
+            # Attach source URLs when Gemini labels as supported/contradicted
+            sources = sources_lookup.get(key, [])
+            if verdict_raw in {"supports", "contradicts"}:
+                evidence_citations = sources
+            else:
+                evidence_citations = []
             logger.debug(
                 "Step 9 - Preparing Claim object:\n"
                 "  keyword        = %s\n"
@@ -326,7 +396,7 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
                 volatility,
                 reasoning,
             )
-            
+
             claim = Claim(
                 cluster_id=cluster_id,
                 text=normalized,
@@ -334,7 +404,7 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
                 confidence_score=confidence,
                 volatility_score=volatility,
                 reasoning=reasoning,
-                evidence_citations=[]
+                evidence_citations=evidence_citations
             )
             db.add(claim)
             db.commit()
