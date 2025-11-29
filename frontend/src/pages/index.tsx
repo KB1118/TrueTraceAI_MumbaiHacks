@@ -41,6 +41,9 @@ export default function Home() {
             <Link href="/dashboard" className="btn btn-primary">
               View Dashboard
             </Link>
+            <Link href="/multimodal-check" className="btn btn-secondary">
+              Try Multimodal Checker
+            </Link>
             <Link href="/login" className="btn btn-secondary">
               Login
             </Link>

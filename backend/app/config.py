@@ -47,7 +47,7 @@ class Settings(BaseSettings):
         return self.get_database_url()
     
     # Gemini + data extraction
-    GEMINI_API_KEY: str = ""
+    GEMINI_API_KEY: str = "AIzaSyAPE5O3WkomEQgS9IQnrnljtTmRUaCgCD0"
     GEMINI_MODEL: str = "gemini-2.0-flash-exp"
     SENTENCE_TRANSFORMER_MODEL: str = "all-MiniLM-L6-v2"
     MAX_PIPELINE_CLUSTERS: int = 10
@@ -58,6 +58,19 @@ class Settings(BaseSettings):
     TELEGRAM_CHANNEL_LIMIT: int = 20
     TELEGRAM_POST_LIMIT: int = 50
     CLAIMS_PER_CLUSTER: int = 5
+
+    # Multimodal fact checker
+    MULTIMODAL_MODEL: str = "gemini-2.5-flash"
+    MULTIMODAL_PROMPT: str = (
+        "You are a Misinformation Analyst.\n"
+        "1. If video/audio, transcribe the key claims accurately.\n"
+        "2. Identify specific factual assertions.\n"
+        "3. Verify each assertion using Google Search.\n"
+        "4. Rate the content: Verified, Misleading, False, Satire, or Needs Context.\n"
+        "5. Cite your sources."
+    )
+    MULTIMODAL_POLL_INTERVAL: float = 2.0
+    MULTIMODAL_POLL_TIMEOUT: int = 240
 
     # Ollama Cloud API
     OLLAMA_API_KEY: str = ""

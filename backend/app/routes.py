@@ -1,24 +1,67 @@
 """
 API routes for TrueTrace AI backend.
 """
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Response
-from sqlalchemy.orm import Session
-from typing import List, Optional
+import asyncio
+import logging
 from datetime import datetime
+from typing import List, Optional
 
-from app.database import get_db
-from app.auth import get_current_user, get_password_hash, verify_password
-from app.models import User, Crisis, RumorCluster, Claim, ResultCard
-from app.schemas import (
-    UserRegister, UserLogin, Token, UserResponse,
-    CrisisResponse, RumorClusterResponse, ClaimResponse, ClaimWithCards,
-    VerifyRequest, VerifyResponse, PipelineTrigger, PipelineStatus
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Response,
+    UploadFile,
+    status,
 )
+from sqlalchemy.orm import Session
+
+from app.auth import get_current_user, get_password_hash, verify_password
+from app.config import settings
+from app.database import get_db
+from app.llm import generate_canonical_claim, generate_result_card, retrieve_evidence, verify_claim
+from app.models import Claim, Crisis, ResultCard, RumorCluster, User
 from app.pipeline import run_radar_pipeline
-from app.llm import generate_canonical_claim, retrieve_evidence, verify_claim, generate_result_card
+from app.schemas import (
+    ClaimResponse,
+    ClaimWithCards,
+    CrisisResponse,
+    MultimodalFactCheckResponse,
+    PipelineStatus,
+    PipelineTrigger,
+    RumorClusterResponse,
+    Token,
+    UserLogin,
+    UserRegister,
+    UserResponse,
+    VerifyRequest,
+    VerifyResponse,
+)
+from app.services.multimodal_fact_checker import MultimodalFactChecker
 from app.utils import paginate_query
 
 router = APIRouter()
+logger = logging.getLogger("truetrace.routes")
+
+_multimodal_checker: Optional[MultimodalFactChecker] = None
+
+
+def get_multimodal_checker() -> MultimodalFactChecker:
+    global _multimodal_checker
+    if _multimodal_checker is None:
+        if not settings.GEMINI_API_KEY:
+            raise HTTPException(status_code=500, detail="Gemini API key is not configured.")
+        _multimodal_checker = MultimodalFactChecker(
+            api_key=settings.GEMINI_API_KEY,
+            model=settings.MULTIMODAL_MODEL,
+            base_prompt=settings.MULTIMODAL_PROMPT,
+            poll_interval=settings.MULTIMODAL_POLL_INTERVAL,
+            poll_timeout=settings.MULTIMODAL_POLL_TIMEOUT,
+        )
+    return _multimodal_checker
 
 
 # Auth Routes
@@ -266,4 +309,40 @@ async def get_pipeline_status(
         message="Pipeline is ready",
         last_run=None
     )
+
+
+# Multimodal fact checking
+@router.post("/fact-check/multimodal", response_model=MultimodalFactCheckResponse)
+async def multimodal_fact_check(
+    file: Optional[UploadFile] = File(None),
+    text: Optional[str] = Form(None),
+    context: Optional[str] = Form(None),
+    current_user: User = Depends(get_current_user)
+):
+    """Analyze multimodal (text + optional file) inputs with Gemini 2.5 + Google Search."""
+    checker = get_multimodal_checker()
+
+    file_bytes: Optional[bytes] = None
+    filename: Optional[str] = None
+    if file is not None:
+        filename = file.filename
+        file_bytes = await file.read()
+
+    try:
+        result = await asyncio.to_thread(
+            checker.analyze,
+            filename=filename,
+            file_bytes=file_bytes,
+            user_text=text,
+            context=context,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except TimeoutError as exc:
+        raise HTTPException(status_code=504, detail=str(exc)) from exc
+    except Exception as exc:  # pragma: no cover - unexpected errors logged
+        logger.exception("Multimodal fact check failed")
+        raise HTTPException(status_code=500, detail="Failed to analyze the supplied content.") from exc
+
+    return result
 

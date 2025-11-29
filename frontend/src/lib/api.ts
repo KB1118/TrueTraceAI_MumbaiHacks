@@ -139,5 +139,17 @@ export const pipelineAPI = {
   },
 };
 
+// Multimodal fact-check API
+export const factCheckAPI = {
+  analyze: async (formData: FormData) => {
+    const response = await api.post('/fact-check/multimodal', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 export default api;
 

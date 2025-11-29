@@ -307,16 +307,15 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
             reasoning = _build_reasoning(keyword, verdict_raw)
             logger.debug(
                 "Step 9 - Preparing Claim object:\n"
-                "  keyword      = %s\n"
-                "  cluster_id   = %s\n"
-                "  raw_text     = %s\n"
-                "  normalized   = %s\n"
-                "  verdict_raw  = 
-                %s\n"
+                "  keyword        = %s\n"
+                "  cluster_id     = %s\n"
+                "  raw_text       = %s\n"
+                "  normalized     = %s\n"
+                "  verdict_raw    = %s\n"
                 "  verdict_mapped = %s\n"
-                "  confidence   = %.3f\n"
-                "  volatility   = %.3f\n"
-                "  reasoning    = %s",
+                "  confidence     = %.3f\n"
+                "  volatility     = %.3f\n"
+                "  reasoning      = %s",
                 keyword,
                 cluster_id,
                 claim_text,
@@ -341,7 +340,8 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
             db.commit()
             db.refresh(claim)
             logger.debug(
-                "Step 9 - Persisted Claim row: id=%s, crisis_keyword=%s, cluster_id=%s, verdict=%s, confidence=%.3f, volatility=%.3f",
+                "Step 9 - Persisted Claim row: id=%s, crisis_keyword=%s, cluster_id=%s, verdict=%s, "
+                "confidence=%.3f, volatility=%.3f",
                 claim.id,
                 keyword,
                 cluster_id,
@@ -350,7 +350,7 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
                 claim.volatility_score or 0.0,
             )
             results["claims_verified"] += 1
-            
+
             for audience_type in ["general", "journalist", "researcher"]:
                 card_data = await generate_result_card(
                     claim=normalized,
@@ -385,7 +385,7 @@ async def run_radar_pipeline(db: Session) -> Dict[str, Any]:
             results["claims_verified"]
         )
         return results
-    
+        
     except Exception as e:
         logger.exception("Pipeline run failed: %s", e)
         results["errors"].append(str(e))

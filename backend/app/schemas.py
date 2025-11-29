@@ -104,6 +104,29 @@ class VerifyResponse(BaseModel):
     card: Dict[str, Any]
 
 
+class MultimodalSourceMetadata(BaseModel):
+    rendered_content: Optional[str] = None
+    references: Optional[List[Dict[str, Any]]] = None
+
+
+class MultimodalFileMetadata(BaseModel):
+    name: Optional[str]
+    display_name: Optional[str]
+    mime_type: Optional[str]
+    state: Optional[str]
+    size_bytes: Optional[int]
+
+
+class MultimodalFactCheckResponse(BaseModel):
+    model: str
+    analysis_text: str
+    verdict_summary: Optional[str] = None
+    sources: Optional[MultimodalSourceMetadata] = None
+    file: Optional[MultimodalFileMetadata] = None
+    latency_ms: Optional[int] = None
+    used_google_search: bool = True
+
+
 # Pipeline Schemas
 class PipelineTrigger(BaseModel):
     force: bool = False

@@ -1,3 +1,4 @@
+# --- APPENDED RULES ---
 # Global
 *.log
 *.tmp
@@ -19,7 +20,8 @@ backend/truetrace.db
 backend/truetrace.db-journal
 backend/chroma_db/
 backend/.env
-backend/backend_venv
+backend/backend_venv/
+
 # Node / Next.js frontend
 frontend/node_modules/
 frontend/.next/
@@ -35,4 +37,3 @@ frontend/yarn-error.log*
 .idea/
 .vscode/
 *.code-workspace
-

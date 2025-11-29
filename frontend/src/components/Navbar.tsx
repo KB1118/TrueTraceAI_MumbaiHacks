@@ -47,6 +47,9 @@ export default function Navbar() {
               <Link href="/dashboard" className="navbar-link">
                 Dashboard
               </Link>
+              <Link href="/multimodal-check" className="navbar-link">
+                Multimodal Checker
+              </Link>
               {username && <span className="navbar-user">Welcome, {username}</span>}
               <button onClick={handleLogout} className="navbar-link btn-link">
                 Logout
@@ -60,6 +63,9 @@ export default function Navbar() {
               <Link href="/register" className="navbar-link">
                 Register
               </Link>
+              <Link href="/multimodal-check" className="navbar-link">
+                Multimodal Checker
+              </Link>
             </>
           ) : (
             <>
@@ -68,6 +74,9 @@ export default function Navbar() {
               </Link>
               <Link href="/register" className="navbar-link">
                 Register
+              </Link>
+              <Link href="/multimodal-check" className="navbar-link">
+                Multimodal Checker
               </Link>
             </>
           )}
