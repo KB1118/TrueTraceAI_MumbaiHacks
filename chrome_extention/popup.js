@@ -23,17 +23,31 @@ document.getElementById('download-log').addEventListener('click', () => {
                 return;
             }
 
+            // Use chrome.downloads API for better reliability
             const logData = JSON.stringify(response.logs, null, 2);
             const blob = new Blob([logData], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `missinfo_log_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            chrome.downloads.download({
+                url: url,
+                filename: `truetrace_log_${new Date().toISOString().split('T')[0]}.json`,
+                saveAs: true
+            }, (downloadId) => {
+                if (chrome.runtime.lastError) {
+                    console.error('Download error:', chrome.runtime.lastError);
+                    // Fallback to direct download
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `truetrace_log_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                } else {
+                    console.log('Download started with ID:', downloadId);
+                }
+                // Clean up after a delay
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            });
         }
     });
 });

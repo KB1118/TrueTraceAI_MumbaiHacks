@@ -88,7 +88,7 @@ async function handleAnalysis(text, sendResponse, tabId) {
 
 async function analyzeText(text, apiKey, tabId) {
     try {
-        sendProgress(tabId, 30, "Connecting to TrueTraceAI...");
+        sendProgress(tabId, 30, "Connecting to Gemini...");
         
         const endpoint =
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
@@ -194,7 +194,7 @@ function downloadLog() {
     
     chrome.downloads.download({
         url: url,
-        filename: `missinfo_log_${new Date().toISOString().split('T')[0]}.json`,
+        filename: `truetrace_log_${new Date().toISOString().split('T')[0]}.json`,
         saveAs: true
     });
 }
